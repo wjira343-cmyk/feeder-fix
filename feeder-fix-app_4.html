@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ ศูนย์แก้ไขสาเหตุไฟฟ้าดับ</title>
+<style>
+  :root {
+    --bg: #0f1419; --card: #1a2332; --line: #2d3748;
+    --amber: #f5b942; --cyan: #4ac3f0; --green: #4ade80; --pink: #f472b6;
+    --text: #e2e8f0; --muted: #94a3b8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: 'Sarabun', 'Noto Sans Thai', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, #1a2332, #0f1419);
+    border-bottom: 2px solid var(--amber); padding: 16px 20px 0;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 42px; height: 42px; border-radius: 10px; background: var(--amber);
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+  }
+  h1 { margin: 0; font-size: 19px; color: #fff; }
+  .sub { font-size: 12px; color: var(--muted); }
+  .tabs { display: flex; gap: 4px; margin-top: 14px; overflow-x: auto; }
+  .tab {
+    padding: 10px 16px; border: none; border-radius: 8px 8px 0 0;
+    background: transparent; color: var(--muted); font-size: 14px;
+    cursor: pointer; font-family: inherit; white-space: nowrap;
+  }
+  .tab.active { background: var(--amber); color: var(--bg); font-weight: 700; }
+  main { padding: 18px; max-width: 1100px; margin: 0 auto; }
+  .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap: 10px; margin-bottom: 18px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .stat-num { font-size: 28px; font-weight: 800; }
+  .stat-label { font-size: 13px; color: var(--muted); }
+  .progress-track { height: 10px; background: var(--bg); border-radius: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg,#4ade80,#22c55e); transition: width .4s; }
+  h2 { font-size: 16px; color: var(--amber); margin: 18px 0 4px; }
+  .hint { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; }
+  .feeder-card { margin-bottom: 10px; }
+  .feeder-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .rank {
+    width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-weight: 800;
+    background: var(--line); color: var(--muted);
+  }
+  .rank.top { background: var(--amber); color: var(--bg); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .chips { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .chip {
+    padding: 7px 14px; border-radius: 20px; font-size: 13px; cursor: pointer;
+    font-family: inherit; font-weight: 600; background: var(--bg); color: var(--text);
+  }
+  .chip-all { border: none; color: var(--bg); font-weight: 700; }
+  .chip-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font-weight: 500; }
+  select, input[type=text] {
+    padding: 9px 12px; background: var(--bg); color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px; font-size: 13px; font-family: inherit;
+  }
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+  .task { border-radius: 12px; overflow: hidden; margin-bottom: 10px; }
+  .task-head { padding: 13px; display: flex; align-items: center; gap: 12px; cursor: pointer; flex-wrap: wrap; }
+  .task-icon { font-size: 22px; }
+  .task-title { font-weight: 600; font-size: 14px; }
+  .task-sub { font-size: 12px; color: var(--muted); }
+  .badge {
+    padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .badge .d { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .task-body { padding: 0 14px 16px; border-top: 1px solid var(--line); display: none; }
+  .task.open .task-body { display: block; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 12px; margin-top: 14px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .btn-map {
+    padding: 5px 12px; background: #122f3d; color: var(--cyan); border: 1px solid var(--cyan);
+    border-radius: 16px; font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 600;
+  }
+  .btn-nav {
+    padding: 7px 14px; background: var(--cyan); color: var(--bg); border-radius: 8px;
+    font-size: 13px; font-weight: 700; text-decoration: none; display: inline-block; border: none; cursor: pointer; font-family: inherit;
+  }
+  .route-banner {
+    background: #122f3d; border: 1px solid var(--cyan); border-radius: 12px;
+    padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .cause-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .cf {
+    padding: 8px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; font-family: inherit;
+    background: var(--bg); color: var(--muted); border: 1px solid var(--line);
+  }
+  .cf.active { background: var(--amber); color: var(--bg); border-color: var(--amber); font-weight: 700; }
+  .svg-wrap { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px; overflow-x: auto; }
+  svg { width: 100%; min-width: 320px; display: block; }
+  .stop { border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .stop-num {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; color: var(--bg);
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;
+  }
+  .note-warn {
+    margin-top: 16px; background: #3d2e12; border: 1px solid var(--amber); border-radius: 10px;
+    padding: 12px 16px; font-size: 13px; color: #f5d99a;
+  }
+  .save-info { font-size: 11.5px; color: #64748b; text-align: center; padding: 10px 0 18px; }
+  .footnote { font-size: 11.5px; color: #64748b; margin-top: 6px; }
+  .hidden { display: none !important; }
+  .flex1 { flex: 1; min-width: 150px; }
+  .btn-export {
+    padding: 8px 14px; background: transparent; color: var(--green); border: 1px solid var(--green);
+    border-radius: 8px; font-size: 13px; cursor: pointer; font-family: inherit;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">⚡</div>
+    <div>
+      <h1>ศูนย์แก้ไขสาเหตุไฟฟ้าดับ</h1>
+      <div class="sub">ติดตามงาน · แผนที่หมุด · วิเคราะห์เส้นทาง</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="dashboard">📊 ภาพรวม</button>
+    <button class="tab" data-tab="tasks">📋 รายการงาน</button>
+    <button class="tab" data-tab="map">🗺️ แผนที่+เส้นทาง</button>
+  </div>
+</header>
+
+<main>
+  <div id="page-dashboard"></div>
+  <div id="page-tasks" class="hidden"></div>
+  <div id="page-map" class="hidden"></div>
+</main>
+<div class="save-info" id="saveInfo"></div>
+
+<script>
+// ═══════════ ข้อมูลเริ่มต้นจากสเปรดชีต ═══════════
+const INITIAL_TASKS = [
+  { id:1, date:"3/7/2026", cause:"ติดตั้งจรวด", feeder:"RIU02R-01 F2 นิคมอุตสาหกรรม", lat:null, lng:null, status:"รอดำเนินการ", responsible:"วิศวกรไฟฟ้า", note:"" },
+  { id:2, date:"3/7/2026", cause:"ต้นไม้", feeder:"RIU02R-01 F2 นิคมอุตสาหกรรม", lat:null, lng:null, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:3, date:"3/7/2026", cause:"ต้นไม้", feeder:"RIU02R-01 F2 นิคมอุตสาหกรรม", lat:null, lng:null, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:4, date:"3/7/2026", cause:"ต้นไม้", feeder:"RIU02R-01 F2 นิคมอุตสาหกรรม", lat:null, lng:null, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:5, date:"3/7/2026", cause:"ครอบจรวด", feeder:"RIU01R-01 F1 นิคมอุตสาหกรรม", lat:null, lng:null, status:"รอดำเนินการ", responsible:"วิศวกรไฟฟ้า", note:"" },
+  { id:6, date:"9/7/2026", cause:"ครอบ cover จุดต่อสาย", feeder:"PTR07-VB สถานี1", lat:13.714448, lng:99.851147, status:"รอดำเนินการ", responsible:"วิศวกรไฟฟ้า", note:"" },
+  { id:7, date:"9/7/2026", cause:"สิ่งแปลกปลอม", feeder:"PTR07-VB สถานี1", lat:13.73402885, lng:99.84956914, status:"รอดำเนินการ", responsible:"วิศวกรไฟฟ้า", note:"" },
+  { id:8, date:"9/7/2026", cause:"เถาวัลย์", feeder:"PTR07-VB สถานี1", lat:13.73997074, lng:99.84483135, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:9, date:"9/7/2026", cause:"เถาวัลย์", feeder:"PTR07-VB สถานี1", lat:13.7039628, lng:99.8774869, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:10, date:"9/7/2026", cause:"เถาวัลย์", feeder:"PTR07-VB สถานี1", lat:13.7048198, lng:99.87758749, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:11, date:"9/7/2026", cause:"เถาวัลย์", feeder:"PTR07-VB สถานี1", lat:13.70508869, lng:99.8776185, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:12, date:"13/7/2026", cause:"เถาวัลย์", feeder:"PTR07-VB สถานี1", lat:13.689205, lng:99.870572, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:13, date:"13/7/2026", cause:"คอนทางตรงชำรุด", feeder:"PTR07-VB สถานี1", lat:13.731983, lng:99.863363, status:"รอดำเนินการ", responsible:"วิศวกรไฟฟ้า", note:"ต้องดับไฟทำงาน" },
+  { id:14, date:"14/7/2026", cause:"ต้นไม้, เถาวัลย์", feeder:"PTR07-VB สถานี1", lat:13.714583, lng:99.858054, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:15, date:"14/7/2026", cause:"ต้นไม้, เถาวัลย์", feeder:"PTR07-VB สถานี1", lat:13.716296, lng:99.858763, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:16, date:"14/7/2026", cause:"ต้นไม้, เถาวัลย์", feeder:"PTR07-VB สถานี1", lat:13.705, lng:99.8716, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:17, date:"14/7/2026", cause:"เถาวัลย์", feeder:"PTR01-VB สถานี1", lat:13.6771, lng:99.8835, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:18, date:"14/7/2026", cause:"เถาวัลย์", feeder:"PTR01-VB สถานี1", lat:13.6715, lng:99.9108, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:19, date:"14/7/2026", cause:"เถาวัลย์", feeder:"PTR01-VB สถานี1", lat:13.67313994, lng:99.90005753, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:20, date:"14/7/2026", cause:"ต้นไม้, เถาวัลย์", feeder:"PTR07-VB สถานี1", lat:13.716263, lng:99.867422, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+  { id:21, date:"15/7/2026", cause:"รังนก", feeder:"PTR10-VB สถานี1", lat:13.760884, lng:99.926668, status:"รอดำเนินการ", responsible:"วิศวกรไฟฟ้า", note:"" },
+  { id:22, date:"15/7/2026", cause:"เสาแรงสูงเตี้ย", feeder:"PTR10-VB สถานี1", lat:13.758192, lng:99.930489, status:"รอดำเนินการ", responsible:"วิศวกร/ผู้รับเหมา", note:"" },
+  { id:23, date:"17/7/2026", cause:"ต้นไม้", feeder:"PTR09-VB สถานี1", lat:13.7492, lng:99.8992, status:"รอดำเนินการ", responsible:"ทีมตัดต้นไม้", note:"" },
+];
+
+const STATUS_LIST = ["รอดำเนินการ","กำลังแก้ไข","แก้ไขแล้ว"];
+const RESPONSIBLE_LIST = ["วิศวกรไฟฟ้า","ทีมตัดต้นไม้","วิศวกร/ผู้รับเหมา","ผู้รับเหมา"];
+const CAUSE_GROUPS = ["ทั้งหมด","เถาวัลย์","ต้นไม้","จรวด/ครอบ","อื่นๆ"];
+const STATUS_STYLE = {
+  "รอดำเนินการ": { bg:"#3d2e12", color:"#f5b942" },
+  "กำลังแก้ไข": { bg:"#122f3d", color:"#4ac3f0" },
+  "แก้ไขแล้ว": { bg:"#12331e", color:"#4ade80" },
+};
+const FEEDER_COLOR = {
+  "PTR07-VB สถานี1":"#f5b942","PTR01-VB สถานี1":"#4ade80",
+  "PTR10-VB สถานี1":"#f472b6","PTR09-VB สถานี1":"#4ac3f0",
+};
+
+// ═══════════ บันทึกข้อมูลในเครื่อง (ถ้าเบราว์เซอร์รองรับ) ═══════════
+const SAVE_KEY = "feederFixTasks_v1";
+let canSave = false;
+let tasks;
+try {
+  localStorage.setItem("__t","1"); localStorage.removeItem("__t");
+  canSave = true;
+  const saved = localStorage.getItem(SAVE_KEY);
+  tasks = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(INITIAL_TASKS));
+} catch(e) {
+  tasks = JSON.parse(JSON.stringify(INITIAL_TASKS));
+}
+function persist() {
+  if (!canSave) return;
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(tasks)); } catch(e){}
+}
+document.getElementById("saveInfo").textContent = canSave
+  ? "💾 ข้อมูลบันทึกอัตโนมัติในเครื่องนี้ — เปิดใหม่สถานะไม่หาย"
+  : "⚠️ โหมดพรีวิว: ข้อมูลไม่ถูกบันทึกถาวร (บันทึกไฟล์แล้วเปิดในเบราว์เซอร์เพื่อใช้งานเต็มรูปแบบ)";
+
+// ═══════════ Utilities ═══════════
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function causeIcon(c){
+  if (c.includes("เถาวัลย์") && c.includes("ต้นไม้")) return "🌳";
+  if (c.includes("เถาวัลย์")) return "🌿";
+  if (c.includes("ต้นไม้")) return "🌳";
+  if (c.includes("จรวด")) return "⚡";
+  if (c.includes("cover")||c.includes("ครอบ")) return "🔧";
+  if (c.includes("รังนก")) return "🪺";
+  if (c.includes("เสา")) return "🗼";
+  if (c.includes("คอน")) return "🛠️";
+  return "⚠️";
+}
+function matchCause(cause, group){
+  if (group==="ทั้งหมด") return true;
+  if (group==="เถาวัลย์") return cause.includes("เถาวัลย์");
+  if (group==="ต้นไม้") return cause.includes("ต้นไม้");
+  if (group==="จรวด/ครอบ") return cause.includes("จรวด")||cause.includes("ครอบ");
+  return !cause.includes("เถาวัลย์")&&!cause.includes("ต้นไม้")&&!cause.includes("จรวด")&&!cause.includes("ครอบ");
+}
+function distKm(a,b){
+  const R=6371, toRad=d=>d*Math.PI/180;
+  const dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng);
+  const h=Math.sin(dLat/2)**2+Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+function optimizeRoute(points, origin){
+  if (points.length<=1) return [...points];
+  let remaining=[...points];
+  let start;
+  if(origin){
+    // เริ่มจากจุดที่ใกล้ตำแหน่งผู้ใช้ที่สุด
+    start=remaining.reduce((a,b)=>distKm(origin,a)<distKm(origin,b)?a:b);
+  } else {
+    // ไม่มีตำแหน่งผู้ใช้ → เริ่มจากจุดเหนือสุด
+    start=remaining.reduce((a,b)=>a.lat>b.lat?a:b);
+  }
+  const route=[start];
+  remaining=remaining.filter(p=>p.id!==start.id);
+  while(remaining.length){
+    const last=route[route.length-1];
+    let best=0;
+    for(let i=1;i<remaining.length;i++)
+      if(distKm(last,remaining[i])<distKm(last,remaining[best])) best=i;
+    route.push(remaining[best]);
+    remaining.splice(best,1);
+  }
+  let improved=true;
+  while(improved){
+    improved=false;
+    for(let i=0;i<route.length-2;i++){
+      for(let j=i+2;j<route.length-1;j++){
+        const d1=distKm(route[i],route[i+1])+distKm(route[j],route[j+1]);
+        const d2=distKm(route[i],route[j])+distKm(route[i+1],route[j+1]);
+        if(d2<d1-0.001){
+          const rev=route.slice(i+1,j+1).reverse();
+          route.splice(i+1,j-i,...rev);
+          improved=true;
+        }
+      }
+    }
+  }
+  return route;
+}
+const navUrl = p => `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+
+// ═══════════ State ═══════════
+let currentTab="dashboard";
+let filterFeeder="ทั้งหมด", filterStatus="ทั้งหมด", expandedId=null;
+let mapFeeder="ทั้งหมด", mapCause="ทั้งหมด", highlightId=null;
+let userPos=null, geoStatus="idle";
+
+function getMyLocation(){
+  if(!navigator.geolocation){ geoStatus="unsupported"; render(); return; }
+  geoStatus="loading"; render();
+  navigator.geolocation.getCurrentPosition(
+    pos=>{ userPos={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:pos.coords.accuracy}; geoStatus="ok"; render(); },
+    err=>{ geoStatus="err"+err.code; render(); },
+    { enableHighAccuracy:true, timeout:12000, maximumAge:30000 }
+  );
+}
+function clearMyLocation(){ userPos=null; geoStatus="idle"; render(); }
+
+function feederStats(){
+  const map={};
+  tasks.forEach(t=>{
+    if(!map[t.feeder]) map[t.feeder]={total:0,done:0,doing:0,pending:0,hasCoord:0};
+    map[t.feeder].total++;
+    if(t.lat) map[t.feeder].hasCoord++;
+    if(t.status==="แก้ไขแล้ว") map[t.feeder].done++;
+    else if(t.status==="กำลังแก้ไข") map[t.feeder].doing++;
+    else map[t.feeder].pending++;
+  });
+  return Object.entries(map).sort((a,b)=>(b[1].total-b[1].done)-(a[1].total-a[1].done));
+}
+function feederCauses(name){
+  const list=tasks.filter(t=>t.feeder===name);
+  const g=[];
+  if(list.some(t=>t.cause.includes("เถาวัลย์"))) g.push("เถาวัลย์");
+  if(list.some(t=>t.cause.includes("ต้นไม้"))) g.push("ต้นไม้");
+  if(list.some(t=>t.cause.includes("จรวด")||t.cause.includes("ครอบ"))) g.push("จรวด/ครอบ");
+  return g;
+}
+
+// ═══════════ Tab switching ═══════════
+document.querySelectorAll(".tab").forEach(btn=>{
+  btn.addEventListener("click",()=>switchTab(btn.dataset.tab));
+});
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+  ["dashboard","tasks","map"].forEach(p=>{
+    document.getElementById("page-"+p).classList.toggle("hidden",p!==tab);
+  });
+  render();
+}
+function gotoMap(feeder,cause,hid){
+  mapFeeder=feeder||"ทั้งหมด";
+  mapCause=cause||"ทั้งหมด";
+  highlightId=hid||null;
+  switchTab("map");
+}
+
+// ═══════════ Render: Dashboard ═══════════
+function renderDashboard(){
+  const total=tasks.length;
+  const done=tasks.filter(t=>t.status==="แก้ไขแล้ว").length;
+  const doing=tasks.filter(t=>t.status==="กำลังแก้ไข").length;
+  const pending=total-done-doing;
+  const pct=total?Math.round(done/total*100):0;
+  const feeders=feederStats();
+
+  let html=`
+    <div class="grid-stats">
+      <div class="card"><div class="stat-num">${total}</div><div class="stat-label">ทั้งหมด</div></div>
+      <div class="card"><div class="stat-num" style="color:var(--amber)">${pending}</div><div class="stat-label">รอดำเนินการ</div></div>
+      <div class="card"><div class="stat-num" style="color:var(--cyan)">${doing}</div><div class="stat-label">กำลังแก้ไข</div></div>
+      <div class="card"><div class="stat-num" style="color:var(--green)">${done}</div><div class="stat-label">แก้ไขแล้ว</div></div>
+    </div>
+    <div class="card" style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px">
+        <span>ความคืบหน้าโดยรวม</span><span style="font-weight:700;color:var(--green)">${pct}%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <h2>🎯 กด Feeder → เลือกสาเหตุ → เด้งไปแผนที่+เส้นทางทันที</h2>
+    <p class="hint">ปุ่มสาเหตุจะพาไปหน้าแผนที่ พร้อมวิเคราะห์ลำดับการเดินทางที่สั้นที่สุดให้อัตโนมัติ</p>`;
+
+  feeders.forEach(([name,f],i)=>{
+    const remain=f.total-f.done;
+    const color=FEEDER_COLOR[name]||"#64748b";
+    const causes=feederCauses(name);
+    let chips="";
+    if(f.hasCoord>0){
+      causes.forEach(c=>{
+        chips+=`<button class="chip" style="border:1.5px solid ${color}" onclick="gotoMap('${esc(name)}','${c}')">${causeIcon(c)} ${c} → 🗺️</button>`;
+      });
+      chips+=`<button class="chip chip-all" style="background:${color}" onclick="gotoMap('${esc(name)}','ทั้งหมด')">ทุกจุด + เส้นทาง 🧭</button>`;
+    } else {
+      chips+=`<span style="font-size:12.5px;color:var(--amber);align-self:center">⚠️ ต้องเก็บพิกัด GPS ก่อนจึงวิเคราะห์เส้นทางได้</span>`;
+    }
+    chips+=`<button class="chip chip-ghost" onclick="filterFeeder='${esc(name)}';filterStatus='ทั้งหมด';switchTab('tasks')">📋 รายการงาน</button>`;
+    html+=`
+      <div class="card feeder-card" style="${i===0&&remain>0?'border-color:var(--amber)':''}">
+        <div class="feeder-top">
+          <div class="rank ${i===0?'top':''}">${i+1}</div>
+          <div class="flex1">
+            <div style="font-weight:600;font-size:14px"><span class="dot" style="background:${color}"></span>${esc(name)}</div>
+            <div style="font-size:12px;color:var(--muted)">ค้าง ${remain} งาน · เสร็จ ${f.done}/${f.total}${f.hasCoord===0?' · ⚠️ ยังไม่มีพิกัด':''}</div>
+          </div>
+        </div>
+        <div class="chips">${chips}</div>
+      </div>`;
+  });
+  document.getElementById("page-dashboard").innerHTML=html;
+}
+
+// ═══════════ Render: Tasks ═══════════
+function renderTasks(){
+  const feeders=feederStats();
+  const filtered=tasks.filter(t=>
+    (filterFeeder==="ทั้งหมด"||t.feeder===filterFeeder)&&
+    (filterStatus==="ทั้งหมด"||t.status===filterStatus));
+
+  let html=`
+    <div class="filters">
+      <select id="fFeeder" onchange="filterFeeder=this.value;render()">
+        <option${filterFeeder==="ทั้งหมด"?" selected":""}>ทั้งหมด</option>
+        ${feeders.map(([n])=>`<option${filterFeeder===n?" selected":""}>${esc(n)}</option>`).join("")}
+      </select>
+      <select id="fStatus" onchange="filterStatus=this.value;render()">
+        <option${filterStatus==="ทั้งหมด"?" selected":""}>ทั้งหมด</option>
+        ${STATUS_LIST.map(s=>`<option${filterStatus===s?" selected":""}>${s}</option>`).join("")}
+      </select>
+      <span style="margin-left:auto;font-size:13px;color:var(--muted)">แสดง ${filtered.length} รายการ</span>
+    </div>`;
+
+  filtered.forEach(t=>{
+    const st=STATUS_STYLE[t.status];
+    const open=expandedId===t.id;
+    html+=`
+      <div class="card task ${open?'open':''}" style="padding:0">
+        <div class="task-head" onclick="expandedId=(expandedId===${t.id}?null:${t.id});render()">
+          <span class="task-icon">${causeIcon(t.cause)}</span>
+          <div class="flex1">
+            <div class="task-title">${esc(t.cause)}</div>
+            <div class="task-sub">${esc(t.feeder)} · พบเมื่อ ${t.date}</div>
+          </div>
+          ${t.lat?`<button class="btn-map" onclick="event.stopPropagation();gotoMap('${esc(t.feeder)}','ทั้งหมด',${t.id})">📍 ดูบนแผนที่</button>`:""}
+          <span class="badge" style="background:${st.bg};color:${st.color}">
+            <span class="d" style="background:${st.color}"></span>${t.status}
+          </span>
+          <span style="color:var(--muted);font-size:12px">${open?"▲":"▼"}</span>
+        </div>
+        <div class="task-body">
+          <div class="form-grid">
+            <div>
+              <label>สถานะ</label>
+              <select style="width:100%" onchange="updateTask(${t.id},'status',this.value)">
+                ${STATUS_LIST.map(s=>`<option${t.status===s?" selected":""}>${s}</option>`).join("")}
+              </select>
+            </div>
+            <div>
+              <label>ผู้รับผิดชอบ</label>
+              <select style="width:100%" onchange="updateTask(${t.id},'responsible',this.value)">
+                ${RESPONSIBLE_LIST.map(r=>`<option${t.responsible===r?" selected":""}>${r}</option>`).join("")}
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <label>บันทึกเพิ่มเติม</label>
+            <input type="text" style="width:100%" value="${esc(t.note)}" placeholder="เช่น วัสดุที่ต้องเบิก, ต้องดับไฟ..."
+              onchange="updateTask(${t.id},'note',this.value)">
+          </div>
+          ${t.lat?`<a class="btn-nav" style="margin-top:12px" href="${navUrl(t)}" target="_blank">🧭 นำทางไปจุดนี้ (${t.lat.toFixed(5)}, ${t.lng.toFixed(5)})</a>`:""}
+        </div>
+      </div>`;
+  });
+  document.getElementById("page-tasks").innerHTML=html;
+}
+function updateTask(id,field,value){
+  const t=tasks.find(x=>x.id===id);
+  if(t){ t[field]=value; persist(); render(); }
+}
+
+// ═══════════ Render: Map + Route ═══════════
+function renderMap(){
+  const feeders=feederStats();
+  const pts=tasks.filter(t=>t.lat&&t.lng&&
+    (mapFeeder==="ทั้งหมด"||t.feeder===mapFeeder)&&matchCause(t.cause,mapCause));
+  const route=optimizeRoute(pts, userPos);
+  const legs=[];
+  for(let i=0;i<route.length-1;i++) legs.push(distKm(route[i],route[i+1]));
+  const firstLeg=(userPos&&route.length)?distKm(userPos,route[0]):null;
+  const totalKm=legs.reduce((a,b)=>a+b,0)+(firstLeg||0);
+  const noCoord=tasks.filter(t=>!t.lat);
+  const fullRouteUrl=route.length
+    ?(userPos
+      ?"https://www.google.com/maps/dir/"+userPos.lat+","+userPos.lng+"/"+route.map(p=>`${p.lat},${p.lng}`).join("/")
+      :"https://www.google.com/maps/dir/"+route.map(p=>`${p.lat},${p.lng}`).join("/"))
+    :"#";
+
+  // ── สถานะ GPS ──
+  let geoMsg="";
+  if(geoStatus==="loading") geoMsg=`<span style="color:var(--cyan)">⏳ กำลังค้นหาตำแหน่ง...</span>`;
+  else if(geoStatus==="ok"&&userPos) geoMsg=`<span style="color:var(--green)">✅ ได้ตำแหน่งแล้ว (${userPos.lat.toFixed(5)}, ${userPos.lng.toFixed(5)}${userPos.acc?` ±${Math.round(userPos.acc)}ม.`:""})</span>`;
+  else if(geoStatus==="err1") geoMsg=`<span style="color:var(--amber)">⚠️ ถูกปฏิเสธ — กรุณาอนุญาตการเข้าถึงตำแหน่งในเบราว์เซอร์</span>`;
+  else if(geoStatus==="err2"||geoStatus==="err3") geoMsg=`<span style="color:var(--amber)">⚠️ หาตำแหน่งไม่สำเร็จ — ลองใหม่ในที่โล่ง หรือเปิด GPS</span>`;
+  else if(geoStatus==="unsupported") geoMsg=`<span style="color:var(--amber)">⚠️ เบราว์เซอร์นี้ไม่รองรับ GPS</span>`;
+
+  let html=`
+    <div class="filters">
+      <select onchange="mapFeeder=this.value;highlightId=null;render()">
+        <option${mapFeeder==="ทั้งหมด"?" selected":""}>ทั้งหมด</option>
+        ${feeders.filter(([,f])=>f.hasCoord>0).map(([n])=>`<option${mapFeeder===n?" selected":""}>${esc(n)}</option>`).join("")}
+      </select>
+      <div class="cause-filters">
+        ${CAUSE_GROUPS.map(c=>`<button class="cf ${mapCause===c?'active':''}" onclick="mapCause='${c}';highlightId=null;render()">${c==="ทั้งหมด"?c:causeIcon(c)+" "+c}</button>`).join("")}
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <button class="btn-nav" style="background:${userPos?'var(--green)':'var(--cyan)'}" onclick="getMyLocation()">
+        📍 ${userPos?'อัปเดตตำแหน่งของฉัน':'ใช้ตำแหน่งของฉันเป็นจุดเริ่ม'}
+      </button>
+      ${userPos?`<button class="chip chip-ghost" onclick="clearMyLocation()">✕ ยกเลิก ใช้จุดเหนือสุดแทน</button>`:""}
+      <span style="font-size:12.5px">${geoMsg||`<span style="color:var(--muted)">กดปุ่มเพื่อให้เส้นทางเริ่มจากจุดที่คุณอยู่จริง</span>`}</span>
+    </div>`;
+
+  if(!pts.length){
+    html+=`<div class="card" style="padding:30px;text-align:center;color:var(--muted)">ไม่พบจุดที่มีพิกัดตามเงื่อนไขนี้ — ลองเปลี่ยนตัวกรอง Feeder หรือสาเหตุ</div>`;
+  } else {
+    // ── Route banner ──
+    html+=`
+      <div class="route-banner">
+        <div class="flex1">
+          <div style="font-weight:700;font-size:14px;color:var(--cyan)">🧭 วิเคราะห์เส้นทางแล้ว: ${pts.length} จุด${userPos?' · เริ่มจากตำแหน่งของคุณ':''}</div>
+          <div style="font-size:12.5px;color:#cbd5e1">ระยะทางรวม (เส้นตรง) ≈ <b>${totalKm.toFixed(1)} กม.</b>${userPos?` · จากคุณ → จุดแรก ${firstLeg.toFixed(1)} กม.`:' · เริ่มจุดเหนือสุด → ไล่จุดใกล้ที่สุดต่อเนื่อง'}</div>
+        </div>
+        <a class="btn-nav" style="font-weight:800" href="${fullRouteUrl}" target="_blank">เปิดเส้นทางทั้งหมดใน Google Maps →</a>
+      </div>`;
+
+    // ── SVG ──
+    const allLats=pts.map(p=>p.lat), allLngs=pts.map(p=>p.lng);
+    if(userPos){ allLats.push(userPos.lat); allLngs.push(userPos.lng); }
+    const minLat=Math.min(...allLats)-0.006, maxLat=Math.max(...allLats)+0.006;
+    const minLng=Math.min(...allLngs)-0.006, maxLng=Math.max(...allLngs)+0.006;
+    const W=640, H=460;
+    const X=lng=>((lng-minLng)/Math.max(maxLng-minLng,0.0001))*(W-70)+35;
+    const Y=lat=>H-(((lat-minLat)/Math.max(maxLat-minLat,0.0001))*(H-70)+35);
+
+    let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+    for(let i=0;i<7;i++) svg+=`<line x1="${W/7*(i+.5)}" y1="0" x2="${W/7*(i+.5)}" y2="${H}" stroke="#243044"/>`;
+    for(let i=0;i<6;i++) svg+=`<line x1="0" y1="${H/6*(i+.5)}" x2="${W}" y2="${H/6*(i+.5)}" stroke="#243044"/>`;
+    svg+=`<text x="${W-26}" y="26" fill="#94a3b8" font-size="15" font-weight="700">N ↑</text>`;
+    // เส้นจากตำแหน่งผู้ใช้ → จุดแรก
+    if(userPos&&route.length){
+      svg+=`<line x1="${X(userPos.lng)}" y1="${Y(userPos.lat)}" x2="${X(route[0].lng)}" y2="${Y(route[0].lat)}" stroke="#4ade80" stroke-width="2.5" stroke-dasharray="3 5" opacity="0.9"/>`;
+      svg+=`<text x="${(X(userPos.lng)+X(route[0].lng))/2}" y="${(Y(userPos.lat)+Y(route[0].lat))/2-5}" text-anchor="middle" fill="#86efac" font-size="9.5" font-weight="700">${firstLeg.toFixed(1)} กม.</text>`;
+    }
+    for(let i=0;i<route.length-1;i++){
+      svg+=`<line x1="${X(route[i].lng)}" y1="${Y(route[i].lat)}" x2="${X(route[i+1].lng)}" y2="${Y(route[i+1].lat)}" stroke="#4ac3f0" stroke-width="2" stroke-dasharray="6 4" opacity="0.8"/>`;
+      svg+=`<text x="${(X(route[i].lng)+X(route[i+1].lng))/2}" y="${(Y(route[i].lat)+Y(route[i+1].lat))/2-5}" text-anchor="middle" fill="#7dd3fc" font-size="9.5">${legs[i].toFixed(1)} กม.</text>`;
+    }
+    route.forEach((p,i)=>{
+      const hl=highlightId===p.id;
+      svg+=`<g style="cursor:pointer" onclick="window.open('${navUrl(p)}','_blank')">`;
+      if(hl) svg+=`<circle cx="${X(p.lng)}" cy="${Y(p.lat)}" r="18" fill="none" stroke="#f5b942" stroke-width="2.5"><animate attributeName="r" values="14;20;14" dur="1.5s" repeatCount="indefinite"/></circle>`;
+      svg+=`<circle cx="${X(p.lng)}" cy="${Y(p.lat)}" r="12" fill="${(i===0&&!userPos)?'#4ade80':(FEEDER_COLOR[p.feeder]||'#94a3b8')}" stroke="#0f1419" stroke-width="2"/>`;
+      svg+=`<text x="${X(p.lng)}" y="${Y(p.lat)+4}" text-anchor="middle" fill="#0f1419" font-size="11" font-weight="800">${i+1}</text>`;
+      svg+=`<text x="${X(p.lng)}" y="${Y(p.lat)-17}" text-anchor="middle" font-size="11">${causeIcon(p.cause)}</text>`;
+      svg+=`</g>`;
+    });
+    // หมุดตำแหน่งผู้ใช้
+    if(userPos){
+      svg+=`<g>
+        <circle cx="${X(userPos.lng)}" cy="${Y(userPos.lat)}" r="16" fill="#4ade80" opacity="0.2">
+          <animate attributeName="r" values="12;20;12" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="${X(userPos.lng)}" cy="${Y(userPos.lat)}" r="8" fill="#4ade80" stroke="#0f1419" stroke-width="2.5"/>
+        <text x="${X(userPos.lng)}" y="${Y(userPos.lat)-14}" text-anchor="middle" fill="#86efac" font-size="11" font-weight="800">📍 คุณอยู่ที่นี่</text>
+      </g>`;
+    }
+    svg+=`</svg>`;
+    html+=`<div class="svg-wrap">${svg}</div>
+      <div class="footnote">* หมายเลข = ลำดับการเดินทางที่แนะนำ${userPos?' (🟢 จุดกะพริบ = ตำแหน่งของคุณ)':' (จุด 1 สีเขียว = จุดเริ่ม)'} — กดหมุดเพื่อนำทาง</div>
+      <h2 style="font-size:14px;margin-top:18px">📍 ลำดับการเดินทางที่แนะนำ</h2>`;
+
+    // แถวจุดเริ่ม = ตำแหน่งผู้ใช้
+    if(userPos){
+      html+=`
+        <div class="card stop" style="border-color:var(--green)">
+          <div class="stop-num" style="background:var(--green)">🏁</div>
+          <div class="flex1">
+            <div style="font-size:13.5px;font-weight:600">จุดเริ่มต้น: ตำแหน่งของคุณ</div>
+            <div style="font-size:11.5px;color:var(--muted)">${userPos.lat.toFixed(5)}, ${userPos.lng.toFixed(5)} → ไปจุดที่ 1 ระยะ ${firstLeg.toFixed(1)} กม.</div>
+          </div>
+        </div>`;
+    }
+
+    route.forEach((p,i)=>{
+      const hl=highlightId===p.id;
+      const firstDist=(i===0&&userPos)?` · ห่างจากคุณ ${firstLeg.toFixed(1)} กม.`:"";
+      html+=`
+        <div class="card stop" style="${hl?'border-color:var(--amber);background:#2b3a24':''}">
+          <div class="stop-num" style="background:${(i===0&&!userPos)?'#4ade80':(FEEDER_COLOR[p.feeder]||'#64748b')}">${i+1}</div>
+          <div class="flex1">
+            <div style="font-size:13.5px;font-weight:600">${causeIcon(p.cause)} ${esc(p.cause)}</div>
+            <div style="font-size:11.5px;color:var(--muted)">${esc(p.feeder)}${firstDist}${i>0?` · ห่างจุดก่อนหน้า ${legs[i-1].toFixed(1)} กม.`:""}</div>
+          </div>
+          <a class="btn-nav" style="padding:6px 13px;font-size:12.5px" href="${navUrl(p)}" target="_blank">นำทาง 🧭</a>
+        </div>`;
+    });
+  }
+
+  if(noCoord.length){
+    html+=`<div class="note-warn">⚠️ มี <b>${noCoord.length} จุด</b> ที่ยังไม่มีพิกัด (Feeder นิคมอุตสาหกรรม RIU01/RIU02) — แนะนำให้เก็บพิกัด GPS เมื่อลงพื้นที่ครั้งถัดไป</div>`;
+  }
+  document.getElementById("page-map").innerHTML=html;
+}
+
+// ═══════════ Master render ═══════════
+function render(){
+  if(currentTab==="dashboard") renderDashboard();
+  else if(currentTab==="tasks") renderTasks();
+  else renderMap();
+}
+render();
+</script>
+</body>
+</html>
